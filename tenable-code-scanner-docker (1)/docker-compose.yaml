@@ -1,0 +1,64 @@
+version: "3"
+networks:
+  credentials_network:
+    driver: bridge
+services:
+  siac-comms:
+    image: 245578940568.dkr.ecr.us-east-2.amazonaws.com/siac-comms:2.3.2.31
+    environment:
+      SIAC_URL: https://cloud.tenable.com/cns
+      SIAC_AUTH_TOKEN: c02b38f9-d8f3-4a94-964f-5f6b96bff0e3
+      BOT_URL: http://bot:9020
+      BOT_ID: e99d41bb-459b-4231-ad85-e87a62dba540
+      SIAC_AUTH_URL: http://auth:9022
+    networks:
+      credentials_network:
+        aliases:
+        - comms
+  siac-bot:
+    image: 245578940568.dkr.ecr.us-east-2.amazonaws.com/siac-bot:2.3.2.31
+    environment:
+      SIAC_URL: https://cloud.tenable.com/cns
+      SIAC_AUTH_TOKEN: c02b38f9-d8f3-4a94-964f-5f6b96bff0e3
+      BOT_ID: e99d41bb-459b-4231-ad85-e87a62dba540
+    networks:
+      credentials_network:
+        aliases:
+        - bot
+    ports:
+    - 9020:9020
+  siac-auth:
+    image: 245578940568.dkr.ecr.us-east-2.amazonaws.com/siac-auth:2.3.2.31
+    environment:
+      ETCD_URL: http://etcd:2379
+      BOT_URL: http://bot:9020
+      SIAC_AUTH_TOKEN: c02b38f9-d8f3-4a94-964f-5f6b96bff0e3
+      SIAC_URL: https://cloud.tenable.com/cns
+      BOT_ID: e99d41bb-459b-4231-ad85-e87a62dba540
+    networks:
+      credentials_network:
+        aliases:
+        - auth
+    ports:
+    - 9022:9022
+  etcd:
+    image: bitnami/etcd:latest
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+    networks:
+      credentials_network:
+        aliases:
+        - etcd
+    volumes:
+    - etcd-data:/bitnami/etcd
+  siac-provider-tf:
+    image: 245578940568.dkr.ecr.us-east-2.amazonaws.com/siac-provider-tf-aws:2.3.2.31
+    environment:
+      PUBSUB_ENABLE_NO_OP: "true"
+    networks:
+      credentials_network:
+        aliases:
+        - siac-provider-tf
+volumes:
+  etcd-data:
+    external: false
